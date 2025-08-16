@@ -38,9 +38,26 @@ const io = new Server(server, {
   pingInterval: 25000,
   maxHttpBufferSize: 1e6, // 1MB
   serveClient: false,
-  adapter: process.env.REDIS_URL 
-    ? require('socket.io-redis-adapter')(require('redis').createClient(process.env.REDIS_URL))
-    : undefined
+  // Import Redis adapter only if REDIS_URL is available
+let adapter;
+if (process.env.REDIS_URL) {
+  try {
+    // Dynamic import for Redis adapter
+    const { createRedisAdapter } = await import('socket.io-redis-adapter');
+    const { createClient } = await import('redis');
+    const redisClient = createClient(process.env.REDIS_URL);
+    await redisClient.connect();
+    adapter = createRedisAdapter(redisClient);
+  } catch (err) {
+    console.warn('Failed to initialize Redis adapter, using in-memory adapter:', err);
+  }
+}
+
+// Apply adapter if available
+if (adapter) {
+  return adapter;
+}
+return undefined;
 });
 
 // Setup enhanced socket handlers
