@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-const { exec } = require('child_process');
-const path = require('path');
+import { exec } from 'child_process';
+import path from 'path';
 
 console.log('🚀 Starting Full Production Preparation...');
 console.log('==========================================\n');
