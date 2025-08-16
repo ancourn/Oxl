@@ -42,6 +42,7 @@ model User {
   meetParticipants MeetParticipant[]
   meetMessages  MeetMessage[]
   notifications Notification[]
+  createdDriveItems DriveItem[] @relation("DriveItemCreator")
   
   @@map("users")
 }
@@ -53,6 +54,10 @@ model Team {
   description String?
   avatar      String?
   ownerId     String
+  subscriptionTier SubscriptionTier @default(FREE)
+  subscriptionStatus SubscriptionStatus @default(TRIALING)
+  maxMembers Int      @default(5)
+  maxStorage BigInt   @default(5368709120)  // 5GB
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -65,6 +70,7 @@ model Team {
   mails       Mail[]
   meetRooms   MeetRoom[]
   notifications Notification[]
+  driveItems  DriveItem[]
   
   @@map("teams")
 }
@@ -74,6 +80,7 @@ model TeamMember {
   teamId    String
   userId    String
   role      TeamRole      @default(MEMBER)
+  status    TeamMemberStatus @default(INVITED)
   joinedAt  DateTime      @default(now())
   invitedBy String?
   inviteToken String?
@@ -93,6 +100,12 @@ enum TeamRole {
   MEMBER
 }
 
+enum TeamMemberStatus {
+  INVITED
+  ACTIVE
+  INACTIVE
+}
+
 enum UserRole {
   USER
   ADMIN
@@ -102,6 +115,22 @@ enum Plan {
   FREE
   PRO
   ENTERPRISE
+}
+
+enum SubscriptionTier {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  PAST_DUE
+  TRIALING
+  UNPAID
 }
 
 // Authentication (NextAuth.js)
@@ -171,6 +200,37 @@ model File {
   children   File[]      @relation("FileHierarchy")
   
   @@map("files")
+}
+
+// Drive Items (Alternative to File model for simpler structure)
+model DriveItem {
+  id          String      @id @default(cuid())
+  name        String
+  type        DriveItemType
+  size        Int?
+  mimeType    String?
+  teamId      String
+  createdBy  String
+  parentId    String?
+  isShared    Boolean     @default(false)
+  shareToken  String?
+  shareExpiry DateTime?
+  isDeleted   Boolean     @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  team       Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  creator    User        @relation("DriveItemCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  parent     DriveItem?  @relation("DriveItemHierarchy", fields: [parentId], references: [id])
+  children   DriveItem[] @relation("DriveItemHierarchy")
+  
+  @@map("drive_items")
+}
+
+enum DriveItemType {
+  FILE
+  FOLDER
 }
 
 // Document Management
@@ -410,16 +470,6 @@ model Subscription {
   @@map("subscriptions")
 }
 
-enum SubscriptionStatus {
-  ACTIVE
-  CANCELED
-  INCOMPLETE
-  INCOMPLETE_EXPIRED
-  PAST_DUE
-  TRIALING
-  UNPAID
-}
-
 // Meet System
 model MeetRoom {
   id          String      @id @default(cuid())
@@ -444,17 +494,18 @@ model MeetRoom {
 }
 
 model MeetParticipant {
-  id         String   @id @default(cuid())
+  id         String           @id @default(cuid())
   roomId     String
   userId     String
-  joinedAt   DateTime @default(now())
+  status     MeetParticipantStatus @default(INVITED)
+  joinedAt   DateTime         @default(now())
   leftAt     DateTime?
-  isAudioOn  Boolean  @default(true)
-  isVideoOn  Boolean  @default(true)
-  isScreenSharing Boolean @default(false)
+  isAudioOn  Boolean          @default(true)
+  isVideoOn  Boolean          @default(true)
+  isScreenSharing Boolean     @default(false)
 
-  room       MeetRoom  @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  room       MeetRoom         @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@unique([roomId, userId])
   @@map("meet_participants")
@@ -481,10 +532,18 @@ enum MeetMessageType {
   LEAVE
 }
 
+enum MeetParticipantStatus {
+  INVITED
+  JOINED
+  LEFT
+  REJECTED
+}
+
 // Notification System
 enum NotificationType {
   TEAM_INVITE
   MAIL_RECEIVED
+  MEETING_INVITATION
   MEETING_STARTING
   MEETING_ENDING
   STORAGE_WARNING
@@ -493,6 +552,7 @@ enum NotificationType {
   SYSTEM_UPDATE
   DOCUMENT_SHARED
   FILE_SHARED
+  DOCUMENT_COMMENT
 }
 
 model Notification {

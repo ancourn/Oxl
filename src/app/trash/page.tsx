@@ -10,7 +10,7 @@ import {
   Trash2, 
   RefreshCw, 
   AlertTriangle,
-  Restore,
+  RotateCcw,
   Delete
 } from 'lucide-react'
 
@@ -228,7 +228,7 @@ export default function Trash() {
                         size="sm"
                         onClick={() => handleRestore(item.id)}
                       >
-                        <Restore className="mr-2 h-4 w-4" />
+                        <RotateCcw className="mr-2 h-4 w-4" />
                         Restore
                       </Button>
                       <Button
