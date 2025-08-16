@@ -68,6 +68,7 @@ export default function DocsComponent({ teamId }: DocsComponentProps) {
   const [editContent, setEditContent] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [newComment, setNewComment] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetchDocuments();
@@ -80,12 +81,23 @@ export default function DocsComponent({ teamId }: DocsComponentProps) {
   }, [selectedDocument]);
 
   const fetchDocuments = async () => {
+    setIsLoading(true);
     try {
       const response = await fetch(`/api/docs?teamId=${teamId}`);
       const data = await response.json();
-      setDocuments(data);
+      
+      // Check if the response is an array (success) or an error object
+      if (Array.isArray(data)) {
+        setDocuments(data);
+      } else {
+        console.error("Failed to fetch documents:", data.error || "Unknown error");
+        setDocuments([]);
+      }
     } catch (error) {
       console.error("Failed to fetch documents:", error);
+      setDocuments([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -103,7 +115,7 @@ export default function DocsComponent({ teamId }: DocsComponentProps) {
         }),
       });
       const newDocument = await response.json();
-      setDocuments([newDocument, ...documents]);
+      setDocuments([newDocument, ...(Array.isArray(documents) ? documents : [])]);
       setNewDocumentTitle("");
       setShowCreateDocument(false);
       setSelectedDocument(newDocument);
@@ -126,9 +138,9 @@ export default function DocsComponent({ teamId }: DocsComponentProps) {
       const updatedDocument = await response.json();
       setSelectedDocument(updatedDocument);
       setIsEditing(false);
-      setDocuments(documents.map(doc => 
+      setDocuments(Array.isArray(documents) ? documents.map(doc => 
         doc.id === updatedDocument.id ? updatedDocument : doc
-      ));
+      ) : []);
     } catch (error) {
       console.error("Failed to save document:", error);
     }
@@ -139,7 +151,7 @@ export default function DocsComponent({ teamId }: DocsComponentProps) {
       await fetch(`/api/docs/${documentId}`, {
         method: "DELETE",
       });
-      setDocuments(documents.filter(doc => doc.id !== documentId));
+      setDocuments(Array.isArray(documents) ? documents.filter(doc => doc.id !== documentId) : []);
       if (selectedDocument?.id === documentId) {
         setSelectedDocument(null);
       }
@@ -176,10 +188,10 @@ export default function DocsComponent({ teamId }: DocsComponentProps) {
     return "U";
   };
 
-  const filteredDocuments = documents.filter(doc =>
+  const filteredDocuments = Array.isArray(documents) ? documents.filter(doc =>
     doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     doc.content.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ) : [];
 
   return (
     <div className="h-full flex">
@@ -206,41 +218,61 @@ export default function DocsComponent({ teamId }: DocsComponentProps) {
           
           <div className="space-y-2">
             <h3 className="font-semibold text-sm text-muted-foreground">Recent Documents</h3>
-            {filteredDocuments.map((document) => (
-              <Card
-                key={document.id}
-                className={`cursor-pointer hover:bg-accent/50 ${
-                  selectedDocument?.id === document.id ? "bg-accent" : ""
-                }`}
-                onClick={() => setSelectedDocument(document)}
-              >
-                <CardContent className="p-3">
-                  <div className="flex items-start space-x-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <FileText className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">
-                        {document.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(document.updatedAt).toLocaleDateString()}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        by {document.author.name || document.author.email}
-                      </p>
-                      {document.comments.length > 0 && (
-                        <Badge variant="secondary" className="mt-1">
-                          {document.comments.length} comments
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {isLoading ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i} className="animate-pulse">
+                    <CardContent className="p-3">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                          <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <>
+                {filteredDocuments.map((document) => (
+                  <Card
+                    key={document.id}
+                    className={`cursor-pointer hover:bg-accent/50 ${
+                      selectedDocument?.id === document.id ? "bg-accent" : ""
+                    }`}
+                    onClick={() => setSelectedDocument(document)}
+                  >
+                    <CardContent className="p-3">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <FileText className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">
+                            {document.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(document.updatedAt).toLocaleDateString()}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            by {document.author.name || document.author.email}
+                          </p>
+                          {document.comments.length > 0 && (
+                            <Badge variant="secondary" className="mt-1">
+                              {document.comments.length} comments
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </>
+            )}
             
-            {filteredDocuments.length === 0 && (
+            {!isLoading && filteredDocuments.length === 0 && (
               <div className="text-center py-8">
                 <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
                 <p className="text-sm text-muted-foreground">No documents found</p>
