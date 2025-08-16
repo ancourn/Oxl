@@ -1,9 +1,12 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+<<<<<<< HEAD
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
+=======
+>>>>>>> 1ba90cb23470ded79655cd9f02efd2c171078c07
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,6 +16,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+<<<<<<< HEAD
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -170,16 +174,415 @@ model Doc {
 }
 
 enum Role {
+=======
+// User Management
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  avatar        String?
+  password      String?
+  emailVerified Boolean  @default(false)
+  role          UserRole @default(USER)
+  plan          Plan     @default(FREE)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  files         File[]
+  documents     Document[]
+  mailAccounts  MailAccount[]
+  documentComments DocumentComment[]
+  calendarEvents CalendarEvent[]
+  chatMessages  ChatMessage[]
+  chatRoomMembers ChatRoomMember[]
+  teamMemberships TeamMember[]
+  ownedTeams    Team[]
+  mails        Mail[]
+  meetHostedRooms MeetRoom[]
+  meetParticipants MeetParticipant[]
+  meetMessages  MeetMessage[]
+  
+  @@map("users")
+}
+
+// Team Management
+model Team {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  avatar      String?
+  ownerId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  owner       User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  members     TeamMember[]
+  files       File[]
+  documents   Document[]
+  subscriptions Subscription[]
+  mails       Mail[]
+  meetRooms   MeetRoom[]
+  
+  @@map("teams")
+}
+
+model TeamMember {
+  id        String        @id @default(cuid())
+  teamId    String
+  userId    String
+  role      TeamRole      @default(MEMBER)
+  joinedAt  DateTime      @default(now())
+  invitedBy String?
+  inviteToken String?
+  inviteExpiry DateTime?
+
+  // Relations
+  team      Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([teamId, userId])
+  @@map("team_members")
+}
+
+enum TeamRole {
+>>>>>>> 1ba90cb23470ded79655cd9f02efd2c171078c07
   OWNER
   ADMIN
   MEMBER
 }
 
+<<<<<<< HEAD
+=======
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+// Authentication (NextAuth.js)
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// Drive/File Management
+model File {
+  id          String      @id @default(cuid())
+  name        String
+  path        String
+  size        Int
+  mimeType    String
+  bucket      String      @default("default")
+  key         String      @unique
+  teamId      String
+  userId      String
+  parentId    String?
+  isFolder    Boolean     @default(false)
+  isShared    Boolean     @default(false)
+  shareToken  String?
+  shareExpiry DateTime?
+  isDeleted   Boolean     @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  team       Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent     File?       @relation("FileHierarchy", fields: [parentId], references: [id])
+  children   File[]      @relation("FileHierarchy")
+  
+  @@map("files")
+}
+
+// Document Management
+model Document {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  teamId      String
+  userId      String
+  isShared    Boolean  @default(false)
+  shareToken  String?
+  isDeleted   Boolean  @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  team       Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  versions   DocumentVersion[]
+  comments   DocumentComment[]
+  
+  @@map("documents")
+}
+
+model DocumentVersion {
+  id         String   @id @default(cuid())
+  documentId String
+  version    Int
+  content    String
+  createdAt  DateTime @default(now())
+
+  document  Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  
+  @@unique([documentId, version])
+  @@map("document_versions")
+}
+
+model DocumentComment {
+  id         String   @id @default(cuid())
+  documentId String
+  userId     String
+  content    String
+  createdAt  DateTime @default(now())
+
+  document  Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id])
+  
+  @@map("document_comments")
+}
+
+// Mail System
+model MailAccount {
+  id          String   @id @default(cuid())
+  userId      String
+  email       String
+  name        String?
+  smtpHost    String?
+  smtpPort    Int?
+  smtpUser    String?
+  smtpPass    String?
+  imapHost    String?
+  imapPort    Int?
+  imapUser    String?
+  imapPass    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages    MailMessage[]
+  
+  @@map("mail_accounts")
+}
+
+model MailMessage {
+  id          String           @id @default(cuid())
+  accountId   String
+  messageId   String           @unique
+  threadId    String?
+  subject     String
+  body        String?
+  bodyHtml    String?
+  from        String
+  to          String
+  cc          String?
+  bcc         String?
+  attachments String?
+  labels      String?
+  isRead      Boolean          @default(false)
+  isStarred   Boolean          @default(false)
+  isSpam      Boolean          @default(false)
+  isDeleted   Boolean          @default(false)
+  receivedAt  DateTime
+  sentAt      DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  account     MailAccount      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  
+  @@map("mail_messages")
+}
+
+// Calendar
+model CalendarEvent {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  location    String?
+  attendees   String?
+  isAllDay    Boolean  @default(false)
+  isRecurring Boolean  @default(false)
+  recurrence  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("calendar_events")
+}
+
+// Chat System
+model ChatRoom {
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  isPrivate   Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  members     ChatRoomMember[]
+  messages    ChatMessage[]
+  
+  @@map("chat_rooms")
+}
+
+model ChatRoomMember {
+  id       String   @id @default(cuid())
+  roomId  String
+  userId  String
+  role     ChatRole @default(MEMBER)
+  joinedAt DateTime @default(now())
+
+  room     ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+  
+  @@unique([roomId, userId])
+  @@map("chat_room_members")
+}
+
+enum ChatRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  roomId    String
+  userId    String
+  content   String
+  type      ChatType @default(TEXT)
+  isEdited  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+  
+  @@map("chat_messages")
+}
+
+enum ChatType {
+  TEXT
+  FILE
+  IMAGE
+  SYSTEM
+}
+
+// Subscription/Billing
+model Subscription {
+  id              String           @id @default(cuid())
+  teamId          String
+  stripePriceId   String?
+  stripeCustomerId String?
+  stripeSubscriptionId String?
+  status          SubscriptionStatus
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  team            Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  
+  @@unique([teamId])
+  @@map("subscriptions")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  PAST_DUE
+  TRIALING
+  UNPAID
+}
+
+// Mail System
+model Mail {
+  id          String      @id @default(cuid())
+  teamId      String
+  userId      String
+  from        String
+  to          String
+  cc          String?
+  bcc         String?
+  subject     String
+  body        String?
+  bodyHtml    String?
+  attachments String?
+  folder      MailFolder  @default(INBOX)
+  isRead      Boolean     @default(false)
+  isStarred   Boolean     @default(false)
+  isSpam      Boolean     @default(false)
+  isDeleted   Boolean     @default(false)
+  threadId    String?
+  receivedAt  DateTime
+  sentAt      DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  team        Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("mails")
+}
+
+>>>>>>> 1ba90cb23470ded79655cd9f02efd2c171078c07
 enum MailFolder {
   INBOX
   SENT
   DRAFTS
   TRASH
+<<<<<<< HEAD
 }
 
 enum MessageType {
@@ -190,4 +593,68 @@ enum MessageType {
 enum DriveType {
   FOLDER
   FILE
+=======
+  SPAM
+}
+
+// Meet System
+model MeetRoom {
+  id          String      @id @default(cuid())
+  teamId      String
+  name        String?
+  description String?
+  hostId      String
+  roomId      String      @unique
+  isLive      Boolean     @default(false)
+  maxParticipants Int      @default(50)
+  startedAt   DateTime?
+  endedAt     DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  team        Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  host        User        @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  participants MeetParticipant[]
+  messages    MeetMessage[]
+  
+  @@map("meet_rooms")
+}
+
+model MeetParticipant {
+  id          String      @id @default(cuid())
+  roomId      String
+  userId      String
+  joinedAt    DateTime    @default(now())
+  leftAt      DateTime?
+  isAudio     Boolean     @default(true)
+  isVideo     Boolean     @default(true)
+  isScreenShare Boolean   @default(false)
+
+  room        MeetRoom    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([roomId, userId])
+  @@map("meet_participants")
+}
+
+model MeetMessage {
+  id          String      @id @default(cuid())
+  roomId      String
+  userId      String
+  content     String
+  type        MeetMessageType @default(TEXT)
+  createdAt   DateTime    @default(now())
+
+  room        MeetRoom    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("meet_messages")
+}
+
+enum MeetMessageType {
+  TEXT
+  SYSTEM
+  JOIN
+  LEAVE
+>>>>>>> 1ba90cb23470ded79655cd9f02efd2c171078c07
 }
