@@ -213,6 +213,7 @@ export default function DriveComponent({ teamId }: DriveComponentProps) {
   const getFileIcon = (mimeType?: string) => {
     if (!mimeType) return <File className="w-8 h-8 text-blue-600" />;
     
+    // eslint-disable-next-line jsx-a11y/alt-text
     if (mimeType.startsWith("image/")) return <Image className="w-8 h-8 text-green-600" />;
     if (mimeType.startsWith("video/")) return <Video className="w-8 h-8 text-red-600" />;
     if (mimeType.startsWith("audio/")) return <Music className="w-8 h-8 text-purple-600" />;
