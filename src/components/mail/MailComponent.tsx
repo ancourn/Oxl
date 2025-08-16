@@ -24,12 +24,14 @@ import {
   Mail, 
   Send, 
   Inbox, 
-  PaperAirplane, 
   FileText, 
   Trash2, 
   MoreVertical,
   Search,
-  Plus
+  Plus,
+  Reply,
+  CornerUpLeft,
+  CornerUpRight
 } from "lucide-react";
 
 interface Mail {
@@ -38,14 +40,8 @@ interface Mail {
   body?: string;
   isRead: boolean;
   folder: string;
-  fromUser: {
-    email: string;
-    name?: string;
-  };
-  toUser: {
-    email: string;
-    name?: string;
-  };
+  from: string;
+  to: string;
   createdAt: string;
 }
 
@@ -63,6 +59,7 @@ export default function MailComponent({ teamId }: MailComponentProps) {
     subject: "",
     body: ""
   });
+  const [composeMode, setComposeMode] = useState<"new" | "reply" | "forward">("new");
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -87,17 +84,50 @@ export default function MailComponent({ teamId }: MailComponentProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...composeData,
+          toEmail: composeData.toEmail,
+          subject: composeData.subject,
+          body: composeData.body,
           teamId
         }),
       });
       
       setComposeData({ toEmail: "", subject: "", body: "" });
       setShowCompose(false);
+      setComposeMode("new");
       fetchMails();
     } catch (error) {
       console.error("Failed to send mail:", error);
     }
+  };
+
+  const replyMail = () => {
+    if (!selectedMail) return;
+    
+    setComposeMode("reply");
+    setComposeData({
+      toEmail: selectedMail.from,
+      subject: `Re: ${selectedMail.subject}`,
+      body: `\n\n---\nOn ${new Date(selectedMail.createdAt).toLocaleString()}, ${selectedMail.from} wrote:\n${selectedMail.body || ""}`
+    });
+    setShowCompose(true);
+  };
+
+  const forwardMail = () => {
+    if (!selectedMail) return;
+    
+    setComposeMode("forward");
+    setComposeData({
+      toEmail: "",
+      subject: `Fwd: ${selectedMail.subject}`,
+      body: `\n\n---\nForwarded message from ${selectedMail.from}:\nSubject: ${selectedMail.subject}\nDate: ${new Date(selectedMail.createdAt).toLocaleString()}\n\n${selectedMail.body || ""}`
+    });
+    setShowCompose(true);
+  };
+
+  const openCompose = () => {
+    setComposeMode("new");
+    setComposeData({ toEmail: "", subject: "", body: "" });
+    setShowCompose(true);
   };
 
   const markAsRead = async (mailId: string) => {
@@ -129,12 +159,16 @@ export default function MailComponent({ teamId }: MailComponentProps) {
 
   const getInitials = (name: string, email: string) => {
     if (name) return name.split(" ").map(n => n[0]).join("").toUpperCase();
-    return email[0].toUpperCase();
+    if (email) {
+      const emailName = email.split("@")[0];
+      return emailName.substring(0, 2).toUpperCase();
+    }
+    return "U";
   };
 
   const filteredMails = mails.filter(mail =>
     mail.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    mail.fromUser.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    mail.from.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (mail.body && mail.body.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
@@ -151,7 +185,7 @@ export default function MailComponent({ teamId }: MailComponentProps) {
       <div className="w-64 border-r bg-card/50">
         <div className="p-4">
           <Button 
-            onClick={() => setShowCompose(true)}
+            onClick={openCompose}
             className="w-full mb-4"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -181,7 +215,7 @@ export default function MailComponent({ teamId }: MailComponentProps) {
               }`}
             >
               <div className="flex items-center">
-                <PaperAirplane className="w-4 h-4 mr-3" />
+                <Send className="w-4 h-4 mr-3" />
                 Sent
               </div>
               {folderCounts.SENT > 0 && (
@@ -251,13 +285,13 @@ export default function MailComponent({ teamId }: MailComponentProps) {
               <div className="flex items-start space-x-3">
                 <Avatar className="w-8 h-8">
                   <AvatarFallback>
-                    {getInitials(mail.fromUser.name || "", mail.fromUser.email)}
+                    {getInitials("", mail.from)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <p className={`text-sm font-medium truncate ${!mail.isRead ? "font-semibold" : ""}`}>
-                      {mail.fromUser.name || mail.fromUser.email}
+                      {mail.from}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {new Date(mail.createdAt).toLocaleDateString()}
@@ -303,15 +337,15 @@ export default function MailComponent({ teamId }: MailComponentProps) {
               <div className="flex items-center space-x-3">
                 <Avatar className="w-10 h-10">
                   <AvatarFallback>
-                    {getInitials(selectedMail.fromUser.name || "", selectedMail.fromUser.email)}
+                    {getInitials("", selectedMail.from)}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <p className="font-medium">
-                    {selectedMail.fromUser.name || selectedMail.fromUser.email}
+                    {selectedMail.from}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    to {selectedMail.toUser.email}
+                    to {selectedMail.to}
                   </p>
                 </div>
                 <div className="ml-auto text-sm text-muted-foreground">
@@ -331,10 +365,16 @@ export default function MailComponent({ teamId }: MailComponentProps) {
             </div>
             
             <div className="p-4 border-t">
-              <Button variant="outline">
-                <Send className="w-4 h-4 mr-2" />
-                Reply
-              </Button>
+              <div className="flex space-x-2">
+                <Button variant="outline" onClick={replyMail}>
+                  <CornerUpLeft className="w-4 h-4 mr-2" />
+                  Reply
+                </Button>
+                <Button variant="outline" onClick={forwardMail}>
+                  <CornerUpRight className="w-4 h-4 mr-2" />
+                  Forward
+                </Button>
+              </div>
             </div>
           </div>
         ) : (
@@ -351,14 +391,20 @@ export default function MailComponent({ teamId }: MailComponentProps) {
       <Dialog open={showCompose} onOpenChange={setShowCompose}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>New Message</DialogTitle>
+            <DialogTitle>
+              {composeMode === "new" && "New Message"}
+              {composeMode === "reply" && "Reply"}
+              {composeMode === "forward" && "Forward"}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <Input
-              placeholder="To"
-              value={composeData.toEmail}
-              onChange={(e) => setComposeData({ ...composeData, toEmail: e.target.value })}
-            />
+            {composeMode !== "reply" && (
+              <Input
+                placeholder="To"
+                value={composeData.toEmail}
+                onChange={(e) => setComposeData({ ...composeData, toEmail: e.target.value })}
+              />
+            )}
             <Input
               placeholder="Subject"
               value={composeData.subject}

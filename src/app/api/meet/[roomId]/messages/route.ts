@@ -17,10 +17,10 @@ export async function POST(
     const roomId = params.roomId;
 
     // For now, use hardcoded user ID
-    const userId = "user_1";
+    const userId = "cmee12dlb0000vd9fqqg4nhea";
 
-    // Find the meeting
-    const meeting = await db.meeting.findUnique({
+    // Find the meeting room
+    const meeting = await db.meetRoom.findUnique({
       where: { roomId },
     });
 
@@ -28,19 +28,19 @@ export async function POST(
       return NextResponse.json({ error: "Meeting not found" }, { status: 404 });
     }
 
-    const meetingMessage = await db.meetingMessage.create({
+    const meetMessage = await db.meetMessage.create({
       data: {
-        meetingId: meeting.id,
+        roomId: meeting.id,
         userId,
         message,
-        type,
+        type: type as any,
       },
       include: {
         user: true,
       },
     });
 
-    return NextResponse.json(meetingMessage);
+    return NextResponse.json(meetMessage);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors }, { status: 400 });
@@ -56,8 +56,8 @@ export async function GET(
   try {
     const roomId = params.roomId;
 
-    // Find the meeting
-    const meeting = await db.meeting.findUnique({
+    // Find the meeting room
+    const meeting = await db.meetRoom.findUnique({
       where: { roomId },
     });
 
@@ -65,8 +65,8 @@ export async function GET(
       return NextResponse.json({ error: "Meeting not found" }, { status: 404 });
     }
 
-    const messages = await db.meetingMessage.findMany({
-      where: { meetingId: meeting.id },
+    const messages = await db.meetMessage.findMany({
+      where: { roomId: meeting.id },
       include: {
         user: true,
       },

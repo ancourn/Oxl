@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { readFile } from 'fs/promises'
+import { readFile, existsSync } from 'fs'
 import { join } from 'path'
 
 export async function GET(request: NextRequest, { params }: { params: { fileName: string } }) {
@@ -8,8 +8,7 @@ export async function GET(request: NextRequest, { params }: { params: { fileName
     const filePath = join(process.cwd(), 'uploads', 'attachments', fileName)
 
     // Check if file exists
-    const fs = require('fs')
-    if (!fs.existsSync(filePath)) {
+    if (!existsSync(filePath)) {
       return NextResponse.json({ error: 'File not found' }, { status: 404 })
     }
 

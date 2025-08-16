@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { writeFile } from 'fs/promises'
+import { writeFile, mkdirSync, existsSync } from 'fs'
 import { join } from 'path'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -48,10 +48,9 @@ export async function POST(request: NextRequest) {
     const path = join(process.cwd(), 'uploads', 'attachments', fileName)
 
     // Create directory if it doesn't exist
-    const fs = require('fs')
     const dir = join(process.cwd(), 'uploads', 'attachments')
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true })
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true })
     }
 
     // Save file to disk

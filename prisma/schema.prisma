@@ -1,12 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-<<<<<<< HEAD
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
-=======
->>>>>>> 1ba90cb23470ded79655cd9f02efd2c171078c07
 generator client {
   provider = "prisma-client-js"
 }
@@ -16,165 +10,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-<<<<<<< HEAD
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Relations
-  teamMemberships TeamMember[]
-  ownedTeams      Team[]
-  sentMails       Mail[]      @relation("MailFromUser")
-  receivedMails   Mail[]      @relation("MailToUser")
-  meetings        MeetingParticipant[]
-  createdMeetings Meeting[]   @relation("MeetingCreator")
-  meetingMessages MeetingMessage[] @relation("MeetingMessageUser")
-  createdDocs     Doc[]       @relation("DocCreator")
-}
-
-model Team {
-  id          String   @id @default(cuid())
-  name        String
-  ownerId     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  // Relations
-  owner       User           @relation(fields: [ownerId], references: [id])
-  members     TeamMember[]
-  mails       Mail[]
-  meetings    Meeting[]
-  drives      Drive[]
-  docs        Doc[]
-  subscription Subscription?
-}
-
-model TeamMember {
-  id     String @id @default(cuid())
-  userId String
-  teamId String
-  role   Role   @default(MEMBER)
-  
-  // Relations
-  user   User   @relation(fields: [userId], references: [id])
-  team   Team   @relation(fields: [teamId], references: [id])
-  
-  @@unique([userId, teamId])
-}
-
-model Subscription {
-  id          String      @id @default(cuid())
-  teamId      String      @unique
-  stripeId    String?
-  plan        String      @default("free") // free, pro
-  status      String      @default("active") // active, cancelled, past_due
-  currentEnd  DateTime
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  
-  // Relations
-  team        Team        @relation(fields: [teamId], references: [id])
-}
-
-model Mail {
-  id           String      @id @default(cuid())
-  fromUserId   String
-  toUserId     String
-  subject      String
-  body         String?
-  attachments  String?     // JSON array of attachment URLs
-  isRead       Boolean     @default(false)
-  folder       MailFolder  @default(INBOX)
-  teamId       String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  
-  // Relations
-  fromUser     User        @relation("MailFromUser", fields: [fromUserId], references: [id])
-  toUser       User        @relation("MailToUser", fields: [toUserId], references: [id])
-  team         Team?       @relation(fields: [teamId], references: [id])
-}
-
-model Meeting {
-  id          String   @id @default(cuid())
-  title       String?
-  roomId      String   @unique
-  teamId      String?
-  createdBy   String
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  // Relations
-  team        Team?                  @relation(fields: [teamId], references: [id])
-  creator     User                   @relation("MeetingCreator", fields: [createdBy], references: [id])
-  participants MeetingParticipant[]
-  messages    MeetingMessage[]
-}
-
-model MeetingParticipant {
-  id         String   @id @default(cuid())
-  userId     String
-  meetingId  String
-  joinedAt   DateTime @default(now())
-  leftAt     DateTime?
-  
-  // Relations
-  user       User     @relation(fields: [userId], references: [id])
-  meeting    Meeting  @relation(fields: [meetingId], references: [id])
-  
-  @@unique([userId, meetingId])
-}
-
-model MeetingMessage {
-  id        String   @id @default(cuid())
-  meetingId String
-  userId    String
-  message   String
-  type      MessageType @default(TEXT)
-  createdAt DateTime @default(now())
-  
-  // Relations
-  meeting   Meeting  @relation(fields: [meetingId], references: [id])
-  user      User     @relation("MeetingMessageUser", fields: [userId], references: [id])
-}
-
-model Drive {
-  id          String   @id @default(cuid())
-  name        String
-  teamId      String
-  parentId    String?
-  type        DriveType @default(FOLDER)
-  size        Int      @default(0)
-  path        String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  // Relations
-  team        Team     @relation(fields: [teamId], references: [id])
-  parent      Drive?   @relation("DriveHierarchy", fields: [parentId], references: [id])
-  children    Drive[]  @relation("DriveHierarchy")
-}
-
-model Doc {
-  id          String   @id @default(cuid())
-  title       String
-  content     String?
-  teamId      String
-  createdBy   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  // Relations
-  team        Team     @relation(fields: [teamId], references: [id])
-  creator     User     @relation("DocCreator", fields: [createdBy], references: [id])
-}
-
-enum Role {
-=======
 // User Management
 model User {
   id            String   @id @default(cuid())
@@ -249,14 +84,11 @@ model TeamMember {
 }
 
 enum TeamRole {
->>>>>>> 1ba90cb23470ded79655cd9f02efd2c171078c07
   OWNER
   ADMIN
   MEMBER
 }
 
-<<<<<<< HEAD
-=======
 enum UserRole {
   USER
   ADMIN
@@ -437,6 +269,44 @@ model MailMessage {
   @@map("mail_messages")
 }
 
+// Mail System (Team-based)
+model Mail {
+  id          String      @id @default(cuid())
+  teamId      String
+  userId      String
+  from        String
+  to          String
+  cc          String?
+  bcc         String?
+  subject     String
+  body        String?
+  bodyHtml    String?
+  attachments String?
+  folder      MailFolder  @default(INBOX)
+  isRead      Boolean     @default(false)
+  isStarred   Boolean     @default(false)
+  isSpam      Boolean     @default(false)
+  isDeleted   Boolean     @default(false)
+  threadId    String?
+  receivedAt  DateTime
+  sentAt      DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  team        Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("mails")
+}
+
+enum MailFolder {
+  INBOX
+  SENT
+  DRAFTS
+  TRASH
+  SPAM
+}
+
 // Calendar
 model CalendarEvent {
   id          String   @id @default(cuid())
@@ -546,57 +416,6 @@ enum SubscriptionStatus {
   UNPAID
 }
 
-// Mail System
-model Mail {
-  id          String      @id @default(cuid())
-  teamId      String
-  userId      String
-  from        String
-  to          String
-  cc          String?
-  bcc         String?
-  subject     String
-  body        String?
-  bodyHtml    String?
-  attachments String?
-  folder      MailFolder  @default(INBOX)
-  isRead      Boolean     @default(false)
-  isStarred   Boolean     @default(false)
-  isSpam      Boolean     @default(false)
-  isDeleted   Boolean     @default(false)
-  threadId    String?
-  receivedAt  DateTime
-  sentAt      DateTime?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-
-  team        Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@map("mails")
-}
-
->>>>>>> 1ba90cb23470ded79655cd9f02efd2c171078c07
-enum MailFolder {
-  INBOX
-  SENT
-  DRAFTS
-  TRASH
-<<<<<<< HEAD
-}
-
-enum MessageType {
-  TEXT
-  SYSTEM
-}
-
-enum DriveType {
-  FOLDER
-  FILE
-=======
-  SPAM
-}
-
 // Meet System
 model MeetRoom {
   id          String      @id @default(cuid())
@@ -621,32 +440,32 @@ model MeetRoom {
 }
 
 model MeetParticipant {
-  id          String      @id @default(cuid())
-  roomId      String
-  userId      String
-  joinedAt    DateTime    @default(now())
-  leftAt      DateTime?
-  isAudio     Boolean     @default(true)
-  isVideo     Boolean     @default(true)
-  isScreenShare Boolean   @default(false)
+  id         String   @id @default(cuid())
+  roomId     String
+  userId     String
+  joinedAt   DateTime @default(now())
+  leftAt     DateTime?
+  isAudioOn  Boolean  @default(true)
+  isVideoOn  Boolean  @default(true)
+  isScreenSharing Boolean @default(false)
 
-  room        MeetRoom    @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  room       MeetRoom  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@unique([roomId, userId])
   @@map("meet_participants")
 }
 
 model MeetMessage {
-  id          String      @id @default(cuid())
-  roomId      String
-  userId      String
-  content     String
-  type        MeetMessageType @default(TEXT)
-  createdAt   DateTime    @default(now())
+  id        String      @id @default(cuid())
+  roomId    String
+  userId    String
+  message   String
+  type      MeetMessageType @default(TEXT)
+  createdAt DateTime    @default(now())
 
-  room        MeetRoom    @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  room      MeetRoom    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id])
   
   @@map("meet_messages")
 }
@@ -656,5 +475,4 @@ enum MeetMessageType {
   SYSTEM
   JOIN
   LEAVE
->>>>>>> 1ba90cb23470ded79655cd9f02efd2c171078c07
 }

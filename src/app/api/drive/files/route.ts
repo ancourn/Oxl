@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ files })
+    return NextResponse.json(files)
   } catch (error) {
     console.error('Error fetching files:', error)
     return NextResponse.json({ error: 'Failed to fetch files' }, { status: 500 })
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { name, isFolder, parentId, teamId } = await request.json()
+    const { name, type, parentId, teamId } = await request.json()
     
     if (!teamId) {
       return NextResponse.json({ error: 'Team ID is required' }, { status: 400 })
@@ -96,6 +96,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
     
+    const isFolder = type === "folder";
+    
     const newItem = await db.file.create({
       data: {
         name,
@@ -106,7 +108,7 @@ export async function POST(request: NextRequest) {
         teamId: teamId,
         userId: user.id,
         parentId: parentId,
-        isFolder: isFolder || false,
+        isFolder: isFolder,
       },
       include: {
         user: {
@@ -119,9 +121,9 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ success: true, file: newItem })
+    return NextResponse.json(newItem)
   } catch (error) {
-    console.error('Error creating folder:', error)
-    return NextResponse.json({ error: 'Failed to create folder' }, { status: 500 })
+    console.error('Error creating item:', error)
+    return NextResponse.json({ error: 'Failed to create item' }, { status: 500 })
   }
 }

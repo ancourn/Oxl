@@ -53,7 +53,7 @@ interface MailResponse {
     totalCount: number;
     totalPages: number;
   };
-  unreadCount?:;
+  unreadCount?: number;
 }
 
 export default function MailPage() {

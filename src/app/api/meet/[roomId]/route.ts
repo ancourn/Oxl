@@ -8,10 +8,10 @@ export async function GET(
   try {
     const roomId = params.roomId;
 
-    const meeting = await db.meeting.findUnique({
+    const meeting = await db.meetRoom.findUnique({
       where: { roomId },
       include: {
-        creator: true,
+        host: true,
         team: true,
         participants: {
           include: {
@@ -46,13 +46,12 @@ export async function POST(
   try {
     const roomId = params.roomId;
     const body = await request.json();
-    const { userId } = body;
 
-    // For demo purposes, use hardcoded user ID if not provided
-    const participantUserId = userId || "user_1";
+    // For demo purposes, use hardcoded user ID
+    const userId = "cmee12dlb0000vd9fqqg4nhea";
 
     // Check if meeting exists
-    const meeting = await db.meeting.findUnique({
+    const meeting = await db.meetRoom.findUnique({
       where: { roomId },
     });
 
@@ -61,19 +60,10 @@ export async function POST(
     }
 
     // Add participant to meeting
-    const participant = await db.meetingParticipant.upsert({
-      where: {
-        userId_meetingId: {
-          userId: participantUserId,
-          meetingId: meeting.id,
-        },
-      },
-      update: {
-        leftAt: null, // Rejoin if they left
-      },
-      create: {
-        userId: participantUserId,
-        meetingId: meeting.id,
+    const participant = await db.meetParticipant.create({
+      data: {
+        roomId: meeting.id,
+        userId,
       },
       include: {
         user: true,

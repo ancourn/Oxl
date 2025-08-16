@@ -37,10 +37,10 @@ import {
 
 interface Meeting {
   id: string;
-  title?: string;
+  name?: string;
   roomId: string;
-  createdBy: string;
-  creator: {
+  hostId: string;
+  host: {
     email: string;
     name?: string;
   };
@@ -283,7 +283,7 @@ export default function MeetComponent({ teamId }: MeetComponentProps) {
 
             {/* Meeting Info */}
             <div className="absolute top-4 left-4 bg-black/50 text-white p-3 rounded-lg">
-              <h3 className="font-semibold">{selectedMeeting.title || "Meeting"}</h3>
+              <h3 className="font-semibold">{selectedMeeting.name || "Meeting"}</h3>
               <p className="text-sm opacity-75">Room: {selectedMeeting.roomId}</p>
               <Button
                 variant="ghost"
@@ -376,7 +376,7 @@ export default function MeetComponent({ teamId }: MeetComponentProps) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">
-                        {meeting.title || "Untitled Meeting"}
+                        {meeting.name || "Untitled Meeting"}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(meeting.createdAt).toLocaleDateString()}

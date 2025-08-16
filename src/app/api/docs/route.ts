@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ documents })
+    return NextResponse.json(documents)
   } catch (error) {
     console.error('Error fetching documents:', error)
     return NextResponse.json({ error: 'Failed to fetch documents' }, { status: 500 })
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ success: true, document })
+    return NextResponse.json(document)
   } catch (error) {
     console.error('Error creating document:', error)
     return NextResponse.json({ error: 'Failed to create document' }, { status: 500 })
