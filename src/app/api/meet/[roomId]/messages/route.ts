@@ -9,12 +9,12 @@ const messageSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { roomId: string } }
+  { params }: { params: Promise<{ roomId: string }> }
 ) {
   try {
     const body = await request.json();
     const { message, type } = messageSchema.parse(body);
-    const roomId = params.roomId;
+    const { roomId } = await params;
 
     // For now, use hardcoded user ID
     const userId = "cmee12dlb0000vd9fqqg4nhea";
@@ -51,10 +51,10 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { roomId: string } }
+  { params }: { params: Promise<{ roomId: string }> }
 ) {
   try {
-    const roomId = params.roomId;
+    const { roomId } = await params;
 
     // Find the meeting room
     const meeting = await db.meetRoom.findUnique({

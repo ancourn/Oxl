@@ -8,10 +8,10 @@ const updateTeamSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const teamId = params.id;
+    const { id: teamId } = await params;
 
     const team = await db.team.findUnique({
       where: { id: teamId },
@@ -38,12 +38,12 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json();
     const { name } = updateTeamSchema.parse(body);
-    const teamId = params.id;
+    const { id: teamId } = await params;
 
     const team = await db.team.update({
       where: { id: teamId },
@@ -70,10 +70,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const teamId = params.id;
+    const { id: teamId } = await params;
 
     await db.team.delete({
       where: { id: teamId },

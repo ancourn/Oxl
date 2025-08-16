@@ -93,12 +93,18 @@ export default function MeetComponent({ teamId }: MeetComponentProps) {
   }, [selectedMeeting, isInMeeting]);
 
   const fetchMeetings = async () => {
+    if (!teamId) {
+      setMeetings([]);
+      return;
+    }
+    
     try {
       const response = await fetch(`/api/meet?teamId=${teamId}`);
       const data = await response.json();
       setMeetings(data);
     } catch (error) {
       console.error("Failed to fetch meetings:", error);
+      setMeetings([]);
     }
   };
 
@@ -116,6 +122,8 @@ export default function MeetComponent({ teamId }: MeetComponentProps) {
   };
 
   const createMeeting = async () => {
+    if (!teamId) return;
+    
     try {
       const response = await fetch("/api/meet", {
         method: "POST",
@@ -350,96 +358,108 @@ export default function MeetComponent({ teamId }: MeetComponentProps) {
 
   return (
     <div className="h-full flex">
-      {/* Meeting List */}
-      <div className="w-80 border-r bg-card/50">
-        <div className="p-4">
-          <Button 
-            onClick={() => setShowCreateMeeting(true)}
-            className="w-full mb-4"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Meeting
-          </Button>
-          
-          <div className="space-y-2">
-            <h3 className="font-semibold text-sm text-muted-foreground">Recent Meetings</h3>
-            {meetings.map((meeting) => (
-              <Card
-                key={meeting.id}
-                className="cursor-pointer hover:bg-accent/50"
-                onClick={() => joinMeeting(meeting)}
-              >
-                <CardContent className="p-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <Video className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">
-                        {meeting.name || "Untitled Meeting"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(meeting.createdAt).toLocaleDateString()}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {meeting.participants.length} participants
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            
-            {meetings.length === 0 && (
-              <div className="text-center py-8">
-                <Video className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground">No meetings yet</p>
-                <p className="text-xs text-muted-foreground">Create your first meeting</p>
-              </div>
-            )}
+      {!teamId ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <Video className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">No Team Selected</h3>
+            <p className="text-muted-foreground">Please select a team to access Meet</p>
           </div>
         </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-center">
-          <Video className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Video Meetings</h2>
-          <p className="text-muted-foreground mb-6">
-            Start or join a video meeting with your team
-          </p>
-          <Button onClick={() => setShowCreateMeeting(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Create Meeting
-          </Button>
-        </div>
-      </div>
-
-      {/* Create Meeting Dialog */}
-      <Dialog open={showCreateMeeting} onOpenChange={setShowCreateMeeting}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Meeting</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Input
-              placeholder="Meeting title (optional)"
-              value={newMeetingTitle}
-              onChange={(e) => setNewMeetingTitle(e.target.value)}
-            />
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setShowCreateMeeting(false)}>
-                Cancel
+      ) : (
+        <>
+          {/* Meeting List */}
+          <div className="w-80 border-r bg-card/50">
+            <div className="p-4">
+              <Button 
+                onClick={() => setShowCreateMeeting(true)}
+                className="w-full mb-4"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Meeting
               </Button>
-              <Button onClick={createMeeting}>
-                <Video className="w-4 h-4 mr-2" />
-                Create
+              
+              <div className="space-y-2">
+                <h3 className="font-semibold text-sm text-muted-foreground">Recent Meetings</h3>
+                {meetings.map((meeting) => (
+                  <Card
+                    key={meeting.id}
+                    className="cursor-pointer hover:bg-accent/50"
+                    onClick={() => joinMeeting(meeting)}
+                  >
+                    <CardContent className="p-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <Video className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">
+                            {meeting.name || "Untitled Meeting"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(meeting.createdAt).toLocaleDateString()}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {meeting.participants.length} participants
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                
+                {meetings.length === 0 && (
+                  <div className="text-center py-8">
+                    <Video className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">No meetings yet</p>
+                    <p className="text-xs text-muted-foreground">Create your first meeting</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <Video className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Video Meetings</h2>
+              <p className="text-muted-foreground mb-6">
+                Start or join a video meeting with your team
+              </p>
+              <Button onClick={() => setShowCreateMeeting(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Meeting
               </Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+
+          {/* Create Meeting Dialog */}
+          <Dialog open={showCreateMeeting} onOpenChange={setShowCreateMeeting}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Meeting</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Input
+                  placeholder="Meeting title (optional)"
+                  value={newMeetingTitle}
+                  onChange={(e) => setNewMeetingTitle(e.target.value)}
+                />
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" onClick={() => setShowCreateMeeting(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={createMeeting}>
+                    <Video className="w-4 h-4 mr-2" />
+                    Create
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
     </div>
   );
 }

@@ -8,12 +8,12 @@ const commentSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json();
     const { content } = commentSchema.parse(body);
-    const documentId = params.id;
+    const { id: documentId } = await params;
 
     // For now, use hardcoded user ID
     const userId = "cmee12dlb0000vd9fqqg4nhea";
@@ -65,10 +65,10 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const documentId = params.id;
+    const { id: documentId } = await params;
 
     const comments = await db.documentComment.findMany({
       where: { documentId },

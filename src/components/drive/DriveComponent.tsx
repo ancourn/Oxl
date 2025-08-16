@@ -78,6 +78,12 @@ export default function DriveComponent({ teamId }: DriveComponentProps) {
   }, [teamId]);
 
   const fetchDriveItems = async (parentId?: string) => {
+    if (!teamId) {
+      setItems([]);
+      setIsLoading(false);
+      return;
+    }
+    
     setIsLoading(true);
     try {
       const params = new URLSearchParams({ teamId: teamId || "" });
@@ -102,11 +108,13 @@ export default function DriveComponent({ teamId }: DriveComponentProps) {
   };
 
   const uploadFile = async (files: FileList) => {
+    if (!teamId) return;
+    
     const formData = new FormData();
     for (let i = 0; i < files.length; i++) {
       formData.append("files", files[i]);
     }
-    formData.append("teamId", teamId || "");
+    formData.append("teamId", teamId);
     
     const currentFolderId = currentPath.length > 0 ? currentPath[currentPath.length - 1].id : "";
     if (currentFolderId) {
@@ -128,7 +136,7 @@ export default function DriveComponent({ teamId }: DriveComponentProps) {
   };
 
   const createFolder = async () => {
-    if (!newFolderName.trim()) return;
+    if (!newFolderName.trim() || !teamId) return;
 
     try {
       const response = await fetch("/api/drive/files", {
@@ -259,67 +267,77 @@ export default function DriveComponent({ teamId }: DriveComponentProps) {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="border-b p-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-semibold">Drive</h1>
-            {currentPath.length > 0 && (
-              <Button variant="outline" onClick={navigateBack}>
-                ← Back
-              </Button>
-            )}
-            <div className="text-sm text-muted-foreground">
-              {currentPath.length === 0 ? "My Drive" : currentPath.map(f => f.name).join(" / ")}
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Button
-              variant={viewMode === "grid" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setViewMode("grid")}
-            >
-              <Grid className="w-4 h-4" />
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setViewMode("list")}
-            >
-              <List className="w-4 h-4" />
-            </Button>
+      {!teamId ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <HardDrive className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">No Team Selected</h3>
+            <p className="text-muted-foreground">Please select a team to access Drive</p>
           </div>
         </div>
-        
-        <div className="flex items-center space-x-4">
-          <div className="flex-1 max-w-md">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Search files and folders..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+      ) : (
+        <>
+          {/* Header */}
+          <div className="border-b p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-4">
+                <h1 className="text-2xl font-semibold">Drive</h1>
+                {currentPath.length > 0 && (
+                  <Button variant="outline" onClick={navigateBack}>
+                    ← Back
+                  </Button>
+                )}
+                <div className="text-sm text-muted-foreground">
+                  {currentPath.length === 0 ? "My Drive" : currentPath.map(f => f.name).join(" / ")}
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant={viewMode === "grid" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setViewMode("grid")}
+                >
+                  <Grid className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "list" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setViewMode("list")}
+                >
+                  <List className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <div className="flex-1 max-w-md">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <Input
+                    placeholder="Search files and folders..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Button onClick={() => setShowCreateFolderDialog(true)}>
+                  <FolderPlus className="w-4 h-4 mr-2" />
+                  New Folder
+                </Button>
+                <Button onClick={() => setShowUploadDialog(true)}>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload
+                </Button>
+              </div>
             </div>
           </div>
-          
-          <div className="flex items-center space-x-2">
-            <Button onClick={() => setShowCreateFolderDialog(true)}>
-              <FolderPlus className="w-4 h-4 mr-2" />
-              New Folder
-            </Button>
-            <Button onClick={() => setShowUploadDialog(true)}>
-              <Upload className="w-4 h-4 mr-2" />
-              Upload
-            </Button>
-          </div>
-        </div>
-      </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4">
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-4">
         {viewMode === "grid" ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {isLoading ? (
@@ -546,6 +564,8 @@ export default function DriveComponent({ teamId }: DriveComponentProps) {
           </div>
         </DialogContent>
       </Dialog>
+        </>
+      )}
     </div>
   );
 }

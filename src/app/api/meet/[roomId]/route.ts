@@ -3,10 +3,10 @@ import { db } from "@/lib/db";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { roomId: string } }
+  { params }: { params: Promise<{ roomId: string }> }
 ) {
   try {
-    const roomId = params.roomId;
+    const { roomId } = await params;
 
     const meeting = await db.meetRoom.findUnique({
       where: { roomId },
@@ -41,10 +41,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { roomId: string } }
+  { params }: { params: Promise<{ roomId: string }> }
 ) {
   try {
-    const roomId = params.roomId;
+    const { roomId } = await params;
     const body = await request.json();
 
     // For demo purposes, use hardcoded user ID

@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { MotionWrapper } from "@/components/ui/motion-wrapper";
+import { AuthProvider } from "@/components/auth-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -50,9 +51,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <MotionWrapper type="fade" duration={0.5}>
-            {children}
-          </MotionWrapper>
+          <AuthProvider>
+            <MotionWrapper type="fade" duration={0.5}>
+              {children}
+            </MotionWrapper>
+          </AuthProvider>
           <Toaster />
         </ThemeProvider>
       </body>

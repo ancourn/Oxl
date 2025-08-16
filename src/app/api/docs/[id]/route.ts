@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const document = await db.document.findUnique({
       where: {
-        id: params.id,
+        id,
         isDeleted: false,
       },
       include: {
@@ -36,13 +37,14 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const { title, content } = await request.json()
     
     // Get current document to check if content changed
     const currentDoc = await db.document.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!currentDoc) {
@@ -51,7 +53,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     // Update document
     const updatedDocument = await db.document.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         title: title || currentDoc.title,
         content: content || currentDoc.content,
@@ -62,7 +64,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     // Create new version if content changed
     if (content && content !== currentDoc.content) {
       const latestVersion = await db.documentVersion.findFirst({
-        where: { documentId: params.id },
+        where: { documentId: id },
         orderBy: { version: 'desc' },
       })
 
@@ -70,7 +72,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
       await db.documentVersion.create({
         data: {
-          documentId: params.id,
+          documentId: id,
           version: newVersion,
           content: content,
         },
@@ -84,10 +86,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     await db.document.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         isDeleted: true,
         deletedAt: new Date(),
