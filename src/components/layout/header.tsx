@@ -31,6 +31,7 @@ import {
   Users,
   Building2
 } from 'lucide-react'
+import { NotificationBell } from '@/components/notifications/notification-bell'
 
 interface Team {
   id: string
@@ -171,12 +172,9 @@ export function Header({ title, actions }: HeaderProps) {
                 </div>
 
                 {/* Notifications */}
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="h-4 w-4" />
-                  <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs">
-                    3
-                  </Badge>
-                </Button>
+                {session.user?.id && (
+                  <NotificationBell userId={session.user.id} />
+                )}
 
                 {/* Help */}
                 <Button variant="ghost" size="icon">

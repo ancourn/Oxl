@@ -20,6 +20,8 @@ model User {
   emailVerified Boolean  @default(false)
   role          UserRole @default(USER)
   plan          Plan     @default(FREE)
+  pushToken     String?
+  notificationSettings Json?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -39,6 +41,7 @@ model User {
   meetHostedRooms MeetRoom[]
   meetParticipants MeetParticipant[]
   meetMessages  MeetMessage[]
+  notifications Notification[]
   
   @@map("users")
 }
@@ -61,6 +64,7 @@ model Team {
   subscriptions Subscription[]
   mails       Mail[]
   meetRooms   MeetRoom[]
+  notifications Notification[]
   
   @@map("teams")
 }
@@ -475,4 +479,36 @@ enum MeetMessageType {
   SYSTEM
   JOIN
   LEAVE
+}
+
+// Notification System
+enum NotificationType {
+  TEAM_INVITE
+  MAIL_RECEIVED
+  MEETING_STARTING
+  MEETING_ENDING
+  STORAGE_WARNING
+  BILLING
+  SECURITY_ALERT
+  SYSTEM_UPDATE
+  DOCUMENT_SHARED
+  FILE_SHARED
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  metadata  Json?
+  teamId    String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team      Team?            @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
 }
