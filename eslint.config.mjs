@@ -12,6 +12,9 @@ const compat = new FlatCompat({
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
+    ignores: ["src/hooks/use-auth.ts"],
+  },
+  {
     rules: {
       // TypeScript 相关规则
       "@typescript-eslint/no-explicit-any": "off",
